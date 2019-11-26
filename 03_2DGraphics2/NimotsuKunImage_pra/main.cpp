@@ -19,7 +19,8 @@ namespace GameLib {
 void mainLoop() {
 	if (!gState) {
 		const char* filename = "stageData.txt";
-		char* stageData;
+		File file(filename);
+		/*char* stageData;
 		int fileSize;
 		readFile(&stageData, &fileSize, filename);
 		if (!stageData) {
@@ -27,9 +28,10 @@ void mainLoop() {
 			return;
 		}
 		gState = new State(stageData, fileSize);
-		//gState = new Image(filename);
 		delete[] stageData;
-		stageData = 0;
+		stageData = 0;*/
+
+		gState = new State(file.data(), file.size());
 		gState->draw();
 		return;
 	}

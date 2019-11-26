@@ -9,9 +9,8 @@ using namespace GameLib;
 
 using namespace std;
 
-State::State(const char* stageData, int size) {
-	char* filenameImage = "nimotsuKunImage.dds";
-	mImage = 0;
+State::State(const char* stageData, int size):mImage(0) {
+	const char* filenameImage = "nimotsuKunImage.dds";
 	//Image* mImage = State::mImage();
 	mImage = new Image(filenameImage);
 	//ƒTƒCƒY‘ª’è
@@ -48,6 +47,11 @@ State::State(const char* stageData, int size) {
 			++x;
 		}
 	}
+}
+
+State::~State() {
+	delete mImage;
+	mImage = 0;
 }
 
 Image* State::getImage() {

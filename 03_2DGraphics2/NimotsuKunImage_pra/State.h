@@ -9,6 +9,7 @@ class Image;
 class State {
 public:
 	State(const char* stageData, int size);
+	~State();
 	void update(char input);
 	void draw() const;
 	Image* getImage();

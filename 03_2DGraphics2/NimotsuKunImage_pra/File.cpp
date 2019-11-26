@@ -2,27 +2,40 @@
 #include <fstream>
 using namespace std;
 
-unsigned getUnsigned(const char* p) {
+File::File(const char* filename) {
+	readFile(&filesize, filename);
+}
+
+File::~File() {
+	delete mData;
+	mData = 0;
+}
+
+unsigned File::getUnsigned(int p) {
 	const unsigned char* up;
-	up = reinterpret_cast<const unsigned char*>(p);
-	unsigned r = up[0];
-	r |= up[1] << 8;
-	r |= up[2] << 16;
-	r |= up[3] << 24;
+	//up = reinterpret_cast<const unsigned char*>(p);
+	up = reinterpret_cast<const unsigned char*> (mData);
+	unsigned r = up[0+p];
+	r |= up[1+p] << 8;
+	r |= up[2+p] << 16;
+	r |= up[3+p] << 24;
 	return r;
 }
 
-void readFile(char** buffer, int* size, const char* filename){
+void File::readFile(int* size, const char* filename){
 	ifstream in(filename, ifstream::binary);
-	if (!in) {
-		*buffer = 0;
-		*size = 0;
-	}
-	else {
+
 		in.seekg(0, ifstream::end);
 		*size = static_cast<int>(in.tellg());
 		in.seekg(0, ifstream::beg);
-		*buffer = new char[*size];
-		in.read(*buffer, *size);
-	}
+		mData = new char[*size];
+		in.read(mData, *size);
+}
+
+const char* File::data() {
+	return mData;
+}
+
+int File::size() {
+	return filesize;
 }

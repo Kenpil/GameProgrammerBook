@@ -1,18 +1,25 @@
 #include "Image.h"
 #include "File.h"
 #include "GameLib/Framework.h"
+#include "File.h"
 using namespace GameLib;
 
 Image::Image(const char* filename){
-	char* buffer = 0;
-	int size = 0;
-	readFile(&buffer, &size, filename);
-	mHeight = getUnsigned(&(buffer[12]));
-	mWidth = getUnsigned(&(buffer[16]));
+	File fn(filename);
+	//char* buffer = 0;
+	//int size = 0;
+	//fn.readFile(&buffer, &size, filename);
+	mHeight = fn.getUnsigned(12);
+	mWidth = fn.getUnsigned(16);
 	mData = new unsigned[mWidth * mHeight];
 	for (int i = 0; i < mWidth * mHeight; ++i) {
-		mData[i] = getUnsigned(&(buffer[128 + i * 4]));
+		mData[i] =fn. getUnsigned(128 + i * 4);
 	}
+}
+
+Image::~Image() {
+	delete[] mData;
+	mData = 0;
 }
 int Image::width() const{ 
 	return mWidth;
