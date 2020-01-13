@@ -77,6 +77,10 @@ void State::setSize(const char* stageData, int size) {
 
 void State::drawSmooth(const int dx, const int dy, int gMovingNowFrameCount) {// gMovingNowFrameCount>0のとき、アニメ化
 	bool movingNow = 0;
+	Move leftMove = MOVE_STOP;//左隣の動き.人のマスが左にあって、それがこの移動で動いて来たものならLEFTとなる
+	Move upMove = MOVE_STOP;//さらにその左隣の動き
+	Move leftLeftMove = MOVE_STOP;
+	Move upUpMove = MOVE_STOP;
 	if (gMovingNowFrameCount > 0) {
 		movingNow = 1;
 	}
@@ -84,6 +88,18 @@ void State::drawSmooth(const int dx, const int dy, int gMovingNowFrameCount) {//
 		for (int x = 0; x < mWidth; ++x) {
 			Object o = mObjects(x, y);
 			Move m = mMove(x, y);
+			if (y != 0) {
+				upMove = mMove(x, y - 1);
+			}
+			if (y > 1) {
+				upUpMove = mMove(x, y - 2);
+			}
+			if (x != 0) {
+				leftMove = mMove(x - 1, y);
+			}
+			if (x > 1) {
+				leftLeftMove = mMove(x - 2, y);
+			}
 			bool goalFlag = mGoalFlags(x, y);
 			ImageID id = IMAGE_ID_SPACE;
 			if (o != OBJ_WALL) { //壁以外なら床を描く
@@ -94,14 +110,18 @@ void State::drawSmooth(const int dx, const int dy, int gMovingNowFrameCount) {//
 					drawCell(x, y, IMAGE_ID_SPACE);
 				}
 			}
+
 			switch (o) {
 			case OBJ_SPACE: id = IMAGE_ID_GOAL; break;
 			case OBJ_WALL: id = IMAGE_ID_WALL; break;
 			case OBJ_BLOCK: id = IMAGE_ID_BLOCK; break;
 			case OBJ_MAN: id = IMAGE_ID_PLAYER; break;
 			}
-			if (o != OBJ_SPACE) { //床はもう描いたので不要
-				drawCellSmooth(x, y, movingNow, gMovingNowFrameCount, id, m);
+			if (o != OBJ_SPACE || leftMove == MOVE_LEFT || upMove == MOVE_UP) { //床はもう描いたので不要.左か右が動いたものなら、そのままスペースにせず書き直し
+				if (leftMove == MOVE_LEFT) {
+					cout << "x:" << x << ", y:" << y << ", (x-1 Left)drawSmooth" << endl;
+				}
+				drawCellSmooth(x, y, movingNow, gMovingNowFrameCount, id, m, leftMove, upMove, leftLeftMove, upUpMove);
 			}
 		}
 	}
@@ -114,17 +134,40 @@ void State::drawSmooth(const int dx, const int dy, int gMovingNowFrameCount) {//
 	}
 }
 
-void State::drawCellSmooth(int x, int y, bool movingNow, int movingFrameCount, ImageID id, Move m) {
-	if (movingNow == 0 || (id != IMAGE_ID_PLAYER && id != IMAGE_ID_BLOCK)) {
+void State::drawCellSmooth(int x, int y, bool movingNow, int movingFrameCount, ImageID id, Move m, Move leftMove, Move upMove, Move leftLeftMove, Move upUpMove) {
+	if (movingNow == 0 || ((id != IMAGE_ID_PLAYER && id != IMAGE_ID_BLOCK)) && leftMove != MOVE_LEFT && upMove != MOVE_UP) {
+		//とくに何もないとき
 		mImage->draw(x * 32, y * 32, id * 32, 0, 32, 32);
+	}
+	else if (leftMove == MOVE_LEFT && id != IMAGE_ID_PLAYER) {
+		//左が動いて来た人なら、その右であるこのマスをアニメになるよう書き直し
+		id = IMAGE_ID_PLAYER;
+		mImage->draw(32 * x - movingFrameCount / 2, y * 32, id * 32, 0, 32, 32);
+		cout << "left x: " << x << ", y: " << y << "  cellSmooth" << endl;
+		if (leftLeftMove == MOVE_LEFT) {
+			//ブロックを左に動かしたとき
+			id = IMAGE_ID_BLOCK;
+			mImage->draw(32 * (x - 1) - movingFrameCount / 2, y * 32, id * 32, 0, 32, 32);
+			cout << "leftleft x: " << x << ", y: " << y << "  cellSmooth" << endl;
+		}
+	}
+	else if (upMove == MOVE_UP && id != IMAGE_ID_PLAYER) {
+		id = IMAGE_ID_PLAYER;
+		mImage->draw(32 * x, y * 32 - movingFrameCount / 2, id * 32, 0, 32, 32);
+		cout << "left x: " << x << ", y: " << y << "  cellSmooth" << endl;
+		if (upUpMove == MOVE_UP) {
+			id = IMAGE_ID_BLOCK;
+			//id = IMAGE_ID_GOAL;
+			mImage->draw(x * 32, 32 * (y - 1) - movingFrameCount / 2, id * 32, 0, 32, 32);
+			cout << "leftleft x: " << x << ", y: " << y << "  cellSmooth" << endl;
+		}
 	}
 	else {//何か動くとき
 		switch (m) {
-		case MOVE_UP:mImage->draw(x * 32, 32*y+(32-movingFrameCount / 2)*y, id * 32, 0, 32, 32); break;
+		case MOVE_UP:mImage->draw(x * 32, 32 * (y + 1) - movingFrameCount / 2, id * 32, 0, 32, 32); break;
 		case MOVE_DOWN:mImage->draw(x * 32, 32 * (y - 1) + movingFrameCount / 2, id * 32, 0, 32, 32); break;//ok
-		case MOVE_LEFT:mImage->draw(32 * (x - 1) + movingFrameCount / 2, y * 32, id * 32, 0, 32, 32); break;
+		case MOVE_LEFT:mImage->draw(32 * (x + 1) - movingFrameCount / 2, y * 32, id * 32, 0, 32, 32);  break;
 		case MOVE_RIGHT:mImage->draw(32 * (x - 1) + movingFrameCount / 2, y * 32, id * 32, 0, 32, 32); break;//ok
-
 		default:mImage->draw(x * 32, y * 32, id * 32, 0, 32, 32); break;
 		}
 	}
@@ -208,7 +251,7 @@ void State::update(int dx, int dy, int *gMovingFrameCount) {
 		m(tx, ty) = dxdy2Move(dx, dy);//移動後のマスに移動番号付加
 		if (m(tx, ty) != MOVE_STOP) {
 			*gMovingFrameCount = 1;//人が動いたらアニメ動かす。gMovinFrameCount > 0のとき、updateしない
-			cout << "tx:" << tx << ", ty:" << ty << endl;
+			cout << "tx:" << tx << ", ty:" << ty << ", Move:" << m(tx, ty) << endl;
 		}
 		o(x, y) = OBJ_SPACE;
 		//B.その方向が箱。その方向の次のマスが空白またはゴールであれば移動。

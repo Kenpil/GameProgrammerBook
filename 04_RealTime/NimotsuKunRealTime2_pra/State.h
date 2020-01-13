@@ -42,7 +42,7 @@ private:
 	};
 	void setSize(const char* stageData, int size);
 	void drawCell(int x, int y, ImageID) const;
-	void drawCellSmooth(int x, int y, bool movingNow, int movingNowCount, ImageID id, Move m);
+	void drawCellSmooth(int x, int y, bool movingNow, int movingNowCount, ImageID id, Move m, Move leftMove, Move upMove, Move leftLeftMove, Move upUpMove);
 
 	int mWidth;
 	int mHeight;
