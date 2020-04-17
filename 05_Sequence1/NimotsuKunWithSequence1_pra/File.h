@@ -9,6 +9,7 @@ public:
 	const char* getData() const;
 	unsigned getUnsigned( int position ) const;
 private:
+	int stageNumber; //ステージ選択
 	int mSize;
 	char* mData;
 };
